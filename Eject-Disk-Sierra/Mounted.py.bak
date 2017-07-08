@@ -1,0 +1,135 @@
+"""
+[2017-07-08 SAT 11:58] Petonic
+Modified from:
+ https://www.alfredforum.com/topic/1756-eject-specific-drivesvolumesmounts/
+Look for the tinyupload link there.
+
+Goal is to modify the behavior to look at all disks, not the ones
+in /Volumes.
+"""
+
+import os
+import re
+import glob
+from Feedback import Feedback
+
+import subprocess
+import sys
+from pprint import pformat
+
+targetDisk = -1
+
+
+def run():
+    targetDisk = -1
+    disk_tuples = []
+
+    print >>sys.stderr, 'Got here at the top, argv=<{}>'.format(
+            pformat(sys.argv))
+
+    if len(sys.argv) == 2 and len(sys.argv[1]):
+        try:
+            targetDisk = int(sys.argv[1])
+        except:
+            print >>sys.stderr, 'Argument must be integer: <{}>'.format(
+                    sys.argv[1])
+            feedback = Feedback()
+            feedback.add_item('Argument must be integer disk number', '')
+
+            return feedback
+
+
+
+    # Get all mounts from diskutil
+    proc = subprocess.Popen(['diskutil', 'list'], stdout=subprocess.PIPE)
+
+    for line in iter(proc.stdout.readline, ''):
+        line = line.rstrip()
+        # print >>sys.stderr, '--- {}'.format(line)
+
+        # Start line for each disk to get diskName and diskParms
+        mo = re.search(r'/dev/(disk([0-9])+)\s+\((.+)\):', line)
+        if mo:
+            # print >>sys.stderr, 'mo = <{}>'.format(repr(mo.groups()))
+            # print >> sys.stderr, 'matched: name = <%s>, info=<%s>'%(mo.group(1), mo.group(2))
+            part_tuples = []        # This is zerod for each disk
+            diskName = mo.group(1)
+            try:
+                diskNum = int(mo.group(2))
+            except:
+                print >>sys.stderr, 'Calamtous error, should be int <{}> in line <{}>'.format(mo.group(2), line)
+            diskParms = mo.group(3)
+            continue
+
+        # Partition 0 to get the size information
+        mo = re.match(r'^\s+0:.*[^0-9.]([0-9.]+\s[MG]B).*$', line)
+        if mo:
+            diskSize = mo.group(1)
+            continue
+
+        # All partitions that are not '0': to get a list of parts on disk
+        # --    0:    Apple_HFS Macintosh HD      +499.1 GB   disk1
+        # 1:   [...]         EFI EFI     [...]   209.7 MB   disk2s1
+        # 2:   [...]   Apple_HFS halft   [...]   479.8 GB   disk2s2
+        mo = re.match(r'^\s+([0-9]+):\s+(\S+)\s.*$', line)
+        # 0-4 = partNum : regex.group(1)
+        # 5-32 = partType : regex.group(2)
+        # 33-56 = partName : special positional cut (rtrim)
+        if mo:
+            # print >>sys.stderr, '>>> Partition: {}'.format(line)
+            partNum = mo.group(1)
+            partType = mo.group(2)
+            partName = line[33:56].rstrip()
+            part_tuples.append((partNum, partType, partName))
+            continue
+
+        # Empty line, indicates end of disk entry -- finish processing
+        # Need to populate disk_tuples[] with entries from part_tuples[]
+        mo = re.match(r'^\s*$', line)
+        if mo:
+            # Skip internal disks
+            if 'internal' in diskParms:
+                continue
+            if targetDisk != -1:
+                if targetDisk != diskNum:
+                    continue
+            part_string = ''
+            for (partNum, partType, partName) in part_tuples:
+                # print >>sys.stderr, '{}'.format(repr((partNum, partType, partName)))
+                if len(part_string):
+                    part_string = part_string + ', '
+                part_string = part_string + '{}="{}"({})'.format(
+                        partNum, partName, partType)
+            # print >>sys.stderr, '>>> {}'.format(part_string)
+            disk_tuples.append((str(diskNum), part_string, diskName,
+                                get_disk_icon(diskParms)))
+
+
+    #Debug stopping point
+    ### sys.exit(99)
+
+    # Create the object to display mounts
+    feedback = Feedback()
+
+    # Add the mount items
+    for disk_name, subtitle, disk_arg, disk_icon in disk_tuples:
+        # feedback.add_item(disk_name)
+        feedback.add_item(disk_name, subtitle, disk_arg, icon=disk_icon)
+
+    if disk_tuples:
+        feedback.add_item('All', 'Eject All Disks.', 'all')
+    # If no disks are mounted...say so
+    else:
+        feedback.add_item('No Volumes Found...',
+                          'Searched for mounted external drives with diskutil')
+
+    return feedback
+
+
+def get_disk_icon(diskinfo_parm):
+    if 'external' in diskinfo_parm:
+        return 'USB.png'
+    if 'disk image' in diskinfo_parm:
+        return 'DMG.png'
+    print >>sys.stderr, 'Error: invalid diskinfo_parm value: <%s>' % diskinfo_parm
+    sys.exit(99)
