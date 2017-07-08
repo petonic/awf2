@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>bundleid</key>
-	<string></string>
+	<string>com.petonic.alfred.eject-disk-sierra</string>
 	<key>category</key>
-	<string>Experimental</string>
+	<string>Approved</string>
 	<key>connections</key>
 	<dict>
 		<key>113B3D32-8D36-4EAB-85E3-50A09E11BC11</key>
@@ -59,7 +59,7 @@
 		</array>
 	</dict>
 	<key>createdby</key>
-	<string>Steffen Lyngbaek</string>
+	<string>Mike Petonic</string>
 	<key>description</key>
 	<string>Shows a list of disks to eject and ejects upon selection.</string>
 	<key>disabled</key>
@@ -68,27 +68,6 @@
 	<string>pEject Disk</string>
 	<key>objects</key>
 	<array>
-		<dict>
-			<key>config</key>
-			<dict>
-				<key>lastpathcomponent</key>
-				<true/>
-				<key>onlyshowifquerypopulated</key>
-				<true/>
-				<key>removeextension</key>
-				<false/>
-				<key>text</key>
-				<string>Safe to remove hardware</string>
-				<key>title</key>
-				<string>{query} has been ejected</string>
-			</dict>
-			<key>type</key>
-			<string>alfred.workflow.output.notification</string>
-			<key>uid</key>
-			<string>B7BC7F57-7E0C-429E-A347-55585ACE7900</string>
-			<key>version</key>
-			<integer>1</integer>
-		</dict>
 		<dict>
 			<key>config</key>
 			<dict>
@@ -114,6 +93,27 @@ fi</string>
 			<string>638F8B0D-93AA-465D-8095-854788AE2A16</string>
 			<key>version</key>
 			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>lastpathcomponent</key>
+				<true/>
+				<key>onlyshowifquerypopulated</key>
+				<true/>
+				<key>removeextension</key>
+				<false/>
+				<key>text</key>
+				<string>Safe to remove hardware</string>
+				<key>title</key>
+				<string>{query} has been ejected</string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.notification</string>
+			<key>uid</key>
+			<string>B7BC7F57-7E0C-429E-A347-55585ACE7900</string>
+			<key>version</key>
+			<integer>1</integer>
 		</dict>
 		<dict>
 			<key>config</key>
